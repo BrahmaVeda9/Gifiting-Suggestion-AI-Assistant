@@ -91,15 +91,40 @@ st.markdown(f"""
         line-height: 1.6;
     }}
 
-    /* Zig-Zag text alignment (for messages when no bubbles) */
-    .user-text {{
-        text-align: right;
-        font-weight: 500;
+    /* Zig-Zag text alignment and Capsule styling */
+    .message-capsule {{
+        padding: 12px 22px;
+        border-radius: 28px;
+        display: inline-block;
+        max-width: 85%;
+        font-size: 0.98rem;
+        line-height: 1.5;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 4px 12px rgba(81, 45, 60, 0.05);
     }}
-    
-    .assistant-text {{
+
+    .user-capsule {{
+        background: rgba(219, 188, 200, 0.7) !important; /* 70% transparent pink */
+        border: 1px solid rgba(178, 107, 125, 0.2);
+        color: #3d2b34;
         text-align: left;
     }}
+    
+    .assistant-capsule {{
+        background: rgba(255, 255, 255, 0.7) !important; /* 70% transparent white */
+        border: 1px solid rgba(178, 107, 125, 0.12);
+        color: #3d2b34;
+        text-align: left;
+    }}
+
+    .msg-row {{
+        margin: 20px 0;
+        display: flex;
+        width: 100%;
+    }}
+
+    .user-row {{ justify-content: flex-end; }}
+    .assistant-row {{ justify-content: flex-start; }}
 
     /* Clean Sidebar */
     section[data-testid="stSidebar"] {{
@@ -187,54 +212,59 @@ st.divider()
 # ── CHAT ENGINE ────────────────────────────────────────────────────────────────
 def render_message(role, type, content, msg_id=None, ideas=None):
     if role == "user":
-        # Zig-Zag: User on Right
-        c1, c2 = st.columns([1, 4])
-        with c2:
-            st.markdown(f"<div class='user-text'>{content}</div>", unsafe_allow_html=True)
+        # Zig-Zag: User on Right with Capsule
+        st.markdown(f"""
+        <div class='msg-row user-row'>
+            <div class='message-capsule user-capsule'>{content}</div>
+        </div>""", unsafe_allow_html=True)
     else:
-        # Zig-Zag: AI on Left
-        c1, c2 = st.columns([4, 1])
-        with c1:
-            if type == "text":
-                st.markdown(f"<div class='assistant-text'>{content}</div>", unsafe_allow_html=True)
-            elif type == "gift_ideas":
-                st.markdown(f"<div class='assistant-text'>{content}</div>", unsafe_allow_html=True)
-                for idx, idea in enumerate(ideas):
-                    uid = f"{msg_id}_{idx}"
-                    st.markdown(f"""
-                    <div class="idea-card">
-                        <div class="match-badge">✨ {idea.get('confidence_score', 88)}% MATCH</div>
-                        <div class="idea-title">{idea['title']}</div>
-                        <div class="idea-reasoning">{idea['reasoning']}</div>
-                    </div>""", unsafe_allow_html=True)
-                    
-                    r_col, n_col = st.columns([1, 1])
-                    with r_col:
-                        rating = st.feedback("stars", key=f"rate_{uid}")
-                        if rating is not None:
-                            db.save_rating(st.session_state["session_id"], idea["title"], int(rating) + 1)
-                            st.toast(f"{'⭐'*(int(rating)+1)} rated! Persisted in Supabase.")
-                    with n_col:
-                        if st.button("Gifting Note 💌", key=f"note_{uid}", use_container_width=True):
-                            res = chat_handler.generate_note_for_idea(
-                                st.session_state["session_id"], idea["title"], idea["reasoning"]
-                            )
-                            _note_dialog(idea["title"], res["note"])
+        # Zig-Zag: AI on Left with Capsule
+        if type == "text":
+            st.markdown(f"""
+            <div class='msg-row assistant-row'>
+                <div class='message-capsule assistant-capsule'>{content}</div>
+            </div>""", unsafe_allow_html=True)
+        elif type == "gift_ideas":
+            st.markdown(f"""
+            <div class='msg-row assistant-row'>
+                <div class='message-capsule assistant-capsule'>{content}</div>
+            </div>""", unsafe_allow_html=True)
+            for idx, idea in enumerate(ideas):
+                uid = f"{msg_id}_{idx}"
+                st.markdown(f"""
+                <div class="idea-card">
+                    <div class="match-badge">✨ {idea.get('confidence_score', 88)}% MATCH</div>
+                    <div class="idea-title">{idea['title']}</div>
+                    <div class="idea-reasoning">{idea['reasoning']}</div>
+                </div>""", unsafe_allow_html=True)
                 
-                # REGENERATE
-                st.divider()
-                if st.button("Regenerate Different Ideas ✨", key=f"regen_{msg_id}", use_container_width=True):
-                    with st.spinner("Finding fresh concepts..."):
-                        res = chat_handler.chat(st.session_state["session_id"], "", is_regeneration=True)
-                    if res["type"] == "gift_ideas":
-                        st.session_state["messages"].append({
-                            "role": "assistant", "type": "gift_ideas",
-                            "message": res["message"], "ideas": res["ideas"],
-                            "id": str(uuid.uuid4())[:8],
-                        })
-                        st.rerun()
-                    elif res["type"] == "paywall":
-                        st.warning(res["message"])
+                r_col, n_col = st.columns([1, 1])
+                with r_col:
+                    rating = st.feedback("stars", key=f"rate_{uid}")
+                    if rating is not None:
+                        db.save_rating(st.session_state["session_id"], idea["title"], int(rating) + 1)
+                        st.toast(f"{'⭐'*(int(rating)+1)} rated! Persisted in Supabase.")
+                with n_col:
+                    if st.button("Gifting Note 💌", key=f"note_{uid}", use_container_width=True):
+                        res = chat_handler.generate_note_for_idea(
+                            st.session_state["session_id"], idea["title"], idea["reasoning"]
+                        )
+                        _note_dialog(idea["title"], res["note"])
+            
+            # REGENERATE
+            st.divider()
+            if st.button("Regenerate Different Ideas ✨", key=f"regen_{msg_id}", use_container_width=True):
+                with st.spinner("Finding fresh concepts..."):
+                    res = chat_handler.chat(st.session_state["session_id"], "", is_regeneration=True)
+                if res["type"] == "gift_ideas":
+                    st.session_state["messages"].append({
+                        "role": "assistant", "type": "gift_ideas",
+                        "message": res["message"], "ideas": res["ideas"],
+                        "id": str(uuid.uuid4())[:8],
+                    })
+                    st.rerun()
+                elif res["type"] == "paywall":
+                    st.warning(res["message"])
 
 # ── MAIN LOOP ──────────────────────────────────────────────────────────────────
 for msg in st.session_state["messages"]:

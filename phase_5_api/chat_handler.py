@@ -8,11 +8,27 @@ load_dotenv()
 MODEL = "llama-3.3-70b-versatile"
 
 def _get_client():
-    key = os.getenv("GEMINI_API_KEY")
+    # 1. Try Streamlit Secrets (Cloud Deployment)
+    try:
+        import streamlit as st
+        if "GROQ_API_KEY" in st.secrets:
+            return Groq(api_key=st.secrets["GROQ_API_KEY"])
+        if "GEMINI_API_KEY" in st.secrets:
+            return Groq(api_key=st.secrets["GEMINI_API_KEY"])
+    except:
+        pass
+
+    # 2. Try OS Environment (Local Development)
+    key = os.getenv("GROQ_API_KEY") or os.getenv("GEMINI_API_KEY")
+    
     if not key or key == "dummy_key":
         # Check standard locations or common mistakes
         load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
-        key = os.getenv("GEMINI_API_KEY")
+        key = os.getenv("GROQ_API_KEY") or os.getenv("GEMINI_API_KEY")
+    
+    if not key:
+        raise ValueError("No API Key found. Please set GROQ_API_KEY in Streamlit Secrets or .env")
+        
     return Groq(api_key=key)
 
 client = None # initialized on first use
@@ -151,6 +167,8 @@ def chat(session_id: str, user_message: str, location: str = None, is_regenerati
 
         return result
 
+    except ValueError as e:
+        return {"type": "error", "message": f"⚠️ Configuration Error: {str(e)}. Please check your Streamlit Secrets."}
     except Exception as e:
         print(f"Error in chat_handler: {e}")
         return {"type": "error", "message": "Oh no, there was a tiny glitch in my gifting logic. Let's try that again?"}
