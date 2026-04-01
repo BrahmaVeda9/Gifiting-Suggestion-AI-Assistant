@@ -134,9 +134,9 @@ section[data-testid="stSidebar"] {
 # ─────────────────────────────────────────────────────────────────────────────
 @st.dialog("Your Personalised Gifting Note ✉️")
 def _note_dialog(title: str, note: str):
-    st.markdown(f"**For:** {title}")
+    st.markdown(f"**For:** {title}", unsafe_allow_html=True)
     st.divider()
-    st.markdown(f"*{note}*")
+    st.markdown(f"*{note}*", unsafe_allow_html=True)
     st.divider()
     st.caption("Use the copy button on the code block below to copy your note instantly.")
     st.code(note, language=None)   # st.code has a built-in copy button
