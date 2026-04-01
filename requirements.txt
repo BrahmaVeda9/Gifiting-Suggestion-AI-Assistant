@@ -1,0 +1,9 @@
+streamlit
+streamlit-extras
+groq
+python-dotenv
+supabase
+fastapi
+uvicorn
+pydantic
+requests
