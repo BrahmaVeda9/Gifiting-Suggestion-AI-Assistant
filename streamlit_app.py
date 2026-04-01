@@ -155,9 +155,8 @@ if "regeneration_count" not in st.session_state:
 
 # --- Sidebar: History & Branding ---
 with st.sidebar:
-    st.image("https://files.python-hosted.org/packages/49/7c/8d3e2c3c6f4a8e0e7a1f8e8b/streamlit-1.56.0.tar.gz", width=0) # dummy for space
     st.title("🌸 Dearly")
-    st.markdown("*Meaningful Gifting Assistant*")
+    st.markdown("*The Art of Meaningful Gifting*")
     st.markdown("---")
     
     st.subheader("Successful Sessions")
