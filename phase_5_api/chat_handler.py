@@ -179,7 +179,7 @@ def chat(session_id: str, user_message: str, location: str = None, is_regenerati
         return {"type": "error", "message": f"⚠️ Configuration Error: {str(e)}. Please check your Streamlit Secrets."}
     except Exception as e:
         print(f"Error in chat_handler: {e}")
-        return {"type": "error", "message": "Oh no, there was a tiny glitch in my gifting logic. Let's try that again?"}
+        return {"type": "error", "message": f"Dearly Logic Error: {str(e)}"}
 
 def generate_note_for_idea(session_id: str, idea_title: str, idea_reasoning: str, recipient_name: str = "them") -> dict:
     session = get_session(session_id)
