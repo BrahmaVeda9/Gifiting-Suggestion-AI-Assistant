@@ -243,7 +243,7 @@ def render_message(role, type, content, msg_id=None, ideas=None):
                 
                 st.markdown(f"""
                 <div class="idea-card">
-                    <div class="match-badge">✨ {idea.get('confidence_score', 88)}% MATCH</div>
+                    <div class="match-badge">✨ {idea.get('confidence_score', 88)}% CONFIDENCE SCORE</div>
                     <div class="idea-title">{strategy_name}</div>
                     <div class="idea-reasoning">{idea['reasoning']}</div>
                     <div style="margin-top:12px; padding:10px; background:rgba(178,107,125,0.05); border-radius:8px; border-left:3px solid #B26B7D;">
@@ -257,7 +257,6 @@ def render_message(role, type, content, msg_id=None, ideas=None):
                     rating = st.feedback("stars", key=f"rate_{uid}")
                     if rating is not None:
                         db.save_rating(st.session_state["session_id"], strategy_name, int(rating) + 1)
-                        st.toast(f"{'⭐'*(int(rating)+1)} rated! Persisted in Supabase.")
                 with n_col:
                     if st.button("Gifting Note 💌", key=f"note_{uid}", use_container_width=True):
                         res = chat_handler.generate_note_for_idea(
