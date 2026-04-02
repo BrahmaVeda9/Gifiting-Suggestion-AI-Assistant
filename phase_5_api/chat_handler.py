@@ -134,7 +134,7 @@ def chat(session_id: str, user_message: str, location: str = None, is_regenerati
         return result
 
     except Exception as e:
-        return {"type": "error", "message": "I hit a small bump in my gifting logic. Let's try again!"}
+        return {"type": "error", "message": f"Dearly Logic Error: {str(e)}"}
 
 def generate_note_for_idea(session_id: str, idea_title: str, idea_reasoning: str, recipient_name: str = "them") -> dict:
     session = get_session(session_id)
