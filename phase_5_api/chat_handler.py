@@ -39,30 +39,41 @@ sessions = {}
 # We simulate a paywall after they ask for "Alternative Ideas" more than once.
 MAX_FREE_REGENERATIONS = 1
 
-SYSTEM_PROMPT = """You are Dearly, an extremely intelligent and empathetic AI gifting strategist.
-Your purpose is to move from "Sense" (gathering context) to "Think" (generating strategies) as efficiently as possible.
+SYSTEM_PROMPT = """You are Dearly, a boutique AI gifting strategist. Your goal is to move from "Sense" (intake) to "Think" (strategies) as efficiently as possible.
 
-=== INTAKE LOGIC (CRITICAL) ===
-- You need exactly 3 things to suggest strategies: (1) WHO/OCCASION, (2) BUDGET (₹), (3) at least ONE PASSION/CHALLENGE.
-- If the user provides all 3 in their first message, you MUST jump to "gift_ideas" immediately. Do NOT ask follow-up questions.
-- NEVER repeat information the user has already given (e.g., "I see you mentioned..."). Move straight to the *next* logical step.
-- Be concise. Aims for a 2-turn maximum for intake.
+=== INTAKE CRITERIA (CRITICAL) ===
+You must have exactly 3 things to suggest strategies:
+1. WHO & OCCASION (e.g., Mom's Birthday)
+2. BUDGET (₹)
+3. PASSION or CHALLENGE (e.g., Loves cooking)
 
-=== STRATEGY-FIRST OUTPUT ===
-- Suggest exactly 3 Gifting Strategies.
-- strategy_name: Catchy theme (e.g., "The Morning Routine Fix")
-- reasoning: Connecting the strategy to their specific passion/frustration.
-- example_gift: The concrete implementation.
-- confidence_score: 1-100.
+=== THE GOAL ===
+- If you HAVE all 3, you MUST output 'gift_ideas' immediately.
+- If you are MISSING any, you MUST output 'conversation' and ask for ONLY what is missing.
+- NEVER repeat facts the user already told you.
+- NEVER output raw text outside the JSON block.
 
-=== OUTPUT FORMAT ===
-You ONLY output valid JSON. No preamble. No conversational text outside the JSON.
+=== OUTPUT FORMAT (JSON ONLY) ===
 
-Type 1: Conversation (Still gathering info)
-{"type": "conversation", "message": "Warm, combined question about missing info."}
+Type 1: Conversation (Missing info)
+{
+  "type": "conversation",
+  "message": "Warm, concise question about missing details."
+}
 
-Type 2: Strategies (When you have Occasion, Budget, and Passion)
-{"type": "gift_ideas", "message": "Warm intro to your strategies", "ideas": [...]}
+Type 2: Strategies (Found info)
+{
+  "type": "gift_ideas",
+  "message": "Warm intro to your strategies",
+  "ideas": [
+    {
+      "strategy_name": "Catchy Theme",
+      "reasoning": "Why this fits their context",
+      "example_gift": "Concrete implementation",
+      "confidence_score": 95
+    }
+  ]
+}
 """
 
 def get_session(session_id: str) -> dict:
@@ -75,59 +86,54 @@ def get_session(session_id: str) -> dict:
         }
     return sessions[session_id]
 
+def _extract_json(text: str) -> dict:
+    """Robustly extracts and parses JSON from text, handling markdown fences and chatter."""
+    try:
+        # 1. Try direct parse
+        return json.loads(text)
+    except:
+        # 2. Try re-finding the largest { } block
+        try:
+            match = re.search(r'(\{.*\})', text, re.DOTALL)
+            if match:
+                return json.loads(match.group(1))
+        except:
+            # 3. Last resort fallback
+            return {"type": "conversation", "message": "I'm focusing so hard on the perfect gift that my thoughts got a little tangled! Could we try that again?"}
+
 def chat(session_id: str, user_message: str, location: str = None, is_regeneration: bool = False) -> dict:
     session = get_session(session_id)
-
-    if location and location.strip():
-        session["context"]["location"] = location.strip()
-
     if is_regeneration:
         if session["regeneration_count"] >= MAX_FREE_REGENERATIONS:
-            return {"type": "paywall", "message": "Upgrade to Dearly Premium for unlimited strategy concepts."}
+            return {"type": "paywall", "message": "Upgrade to Dearly Premium for unlimited concepts."}
         session["regeneration_count"] += 1
         session["history"].append({"role": "user", "content": "Provide 3 DIFFERENT strategies now."})
     else:
         session["history"].append({"role": "user", "content": user_message})
 
+    # Prepare Context Memory
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    if session.get("context"):
+        ctx_str = json.dumps(session["context"])
+        messages.append({"role": "system", "content": f"MEMORY: We already know this about the user: {ctx_str}. Do NOT ask for these again."})
+    
     messages.extend(session["history"])
 
     global client
-    if client is None:
-        client = _get_client()
+    if client is None: client = _get_client()
 
     try:
-        response = client.chat.completions.create(
-            model=MODEL,
-            messages=messages,
-            temperature=0.7
-        )
+        response = client.chat.completions.create(model=MODEL, messages=messages, temperature=0.7)
         raw = response.choices[0].message.content.strip()
+        result = _extract_json(raw)
 
-        # Robust JSON extraction: Find the LAST JSON block in case the LLM leaked text
-        json_blocks = re.findall(r'\{.*\}', raw, re.DOTALL)
-        if json_blocks:
-            raw_json = json_blocks[-1]
-        else:
-            raw_json = raw
-
-        try:
-             result = json.loads(raw_json)
-             if not isinstance(result, dict):
-                 result = {"type": "conversation", "message": str(result)}
-        except:
-             # Fallback extraction if JSON has common minor errors
-             result = {"type": "conversation", "message": "I'm having a little trouble structuring my thoughts! Could we try that again?"}
-
+        # Persistence logic
         session["history"].append({"role": "assistant", "content": json.dumps(result)})
-
         if result.get("type") == "gift_ideas" and result.get("ideas"):
             session["ideas"] = result["ideas"]
-            if result.get("occasion"):
-                 session["context"]["occasion"] = result["occasion"]
-
+        
         if not is_regeneration:
-             _extract_context(session, user_message)
+            _extract_context(session, user_message)
 
         return result
 
