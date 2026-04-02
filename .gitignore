@@ -4,7 +4,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 metrics.json
-bg.png
+# bg.png - removed from ignore to allow deployment
 # Ignore local assets if handled by base64, but since we use bg.png now, maybe keep it?
 # Actually, Streamlit on Cloud can see bg.png if it's pushed.
 # I will NOT ignore bg.png so it's deployable.
