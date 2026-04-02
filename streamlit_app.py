@@ -238,31 +238,39 @@ def render_message(role, type, content, msg_id=None, ideas=None):
             </div>""", unsafe_allow_html=True)
             for idx, idea in enumerate(ideas):
                 uid = f"{msg_id}_{idx}"
+                strategy_name = idea.get('strategy_name', idea.get('title', 'Gifting Strategy'))
+                example_gift = idea.get('example_gift', 'Thoughtful gift concept')
+                
                 st.markdown(f"""
                 <div class="idea-card">
                     <div class="match-badge">✨ {idea.get('confidence_score', 88)}% MATCH</div>
-                    <div class="idea-title">{idea['title']}</div>
+                    <div class="idea-title">{strategy_name}</div>
                     <div class="idea-reasoning">{idea['reasoning']}</div>
+                    <div style="margin-top:12px; padding:10px; background:rgba(178,107,125,0.05); border-radius:8px; border-left:3px solid #B26B7D;">
+                        <span style="font-weight:600; color:#8f4b67; font-size:0.85rem; text-transform:uppercase;">Example Implementation:</span><br/>
+                        <span style="font-size:0.95rem; color:#3d2b34;">{example_gift}</span>
+                    </div>
                 </div>""", unsafe_allow_html=True)
                 
                 r_col, n_col = st.columns([1, 1])
                 with r_col:
                     rating = st.feedback("stars", key=f"rate_{uid}")
                     if rating is not None:
-                        db.save_rating(st.session_state["session_id"], idea["title"], int(rating) + 1)
+                        db.save_rating(st.session_state["session_id"], strategy_name, int(rating) + 1)
                         st.toast(f"{'⭐'*(int(rating)+1)} rated! Persisted in Supabase.")
                 with n_col:
                     if st.button("Gifting Note 💌", key=f"note_{uid}", use_container_width=True):
                         res = chat_handler.generate_note_for_idea(
-                            st.session_state["session_id"], idea["title"], idea["reasoning"]
+                            st.session_state["session_id"], strategy_name, f"{idea['reasoning']} Implementation: {example_gift}"
                         )
-                        _note_dialog(idea["title"], res["note"])
+                        _note_dialog(strategy_name, res["note"])
             
             # REGENERATE
             st.divider()
-            if st.button("Regenerate Different Ideas ✨", key=f"regen_{msg_id}", use_container_width=True):
-                with st.spinner("Finding fresh concepts..."):
+            if st.button("Regenerate Different Strategies ✨", key=f"regen_{msg_id}", use_container_width=True):
+                with st.spinner("Finding fresh frameworks..."):
                     res = chat_handler.chat(st.session_state["session_id"], "", is_regeneration=True)
+
                 if res["type"] == "gift_ideas":
                     st.session_state["messages"].append({
                         "role": "assistant", "type": "gift_ideas",
