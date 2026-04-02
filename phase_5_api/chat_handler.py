@@ -93,8 +93,13 @@ def _extract_json(text: str) -> dict:
             if match:
                 return json.loads(match.group(1))
         except:
-            # 3. Last resort fallback
-            return {"type": "conversation", "message": "I'm focusing so hard on the perfect gift that my thoughts got a little tangled! Could we try that again?"}
+            pass
+            
+    # 3. Last resort fallback (Guaranteed to return a dict)
+    return {
+        "type": "conversation", 
+        "message": "I'm focusing so hard on the perfect gift that my thoughts got a little tangled! Could we try that again?"
+    }
 
 def chat(session_id: str, user_message: str, location: str = None, is_regeneration: bool = False) -> dict:
     session = get_session(session_id)
