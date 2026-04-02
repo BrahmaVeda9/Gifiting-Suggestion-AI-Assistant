@@ -36,10 +36,13 @@ st.markdown(f"""
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,600&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
     /* Global Styles */
-    .stApp {{
-        background-image: linear-gradient(rgba(252,248,250,0.87), rgba(252,248,250,0.87)), url("data:image/png;base64,{bg_b64}");
-        background-size: cover;
-        background-attachment: fixed;
+    [data-testid="stAppViewContainer"] {{
+        background: linear-gradient(rgba(252,248,250,0.8), rgba(252,248,250,0.8)), url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
+        background-size: cover !important;
+    }}
+    
+    [data-testid="stHeader"], .stApp, [data-testid="stVerticalBlock"] {{
+        background: transparent !important;
     }}
     
     html, body, [class*="css"] {{
