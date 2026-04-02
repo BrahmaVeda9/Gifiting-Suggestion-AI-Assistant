@@ -153,9 +153,11 @@ def chat(session_id: str, user_message: str, location: str = None, is_regenerati
         # Check for trailing commas or other common LLM JSON errors and load
         try:
              result = json.loads(raw)
+             if not isinstance(result, dict):
+                 result = {"type": "conversation", "message": str(result)}
         except json.JSONDecodeError:
              # LLMs sometimes fail strict JSON. Attempt a simple fix or fallback
-             result = {"type": "conversation", "message": "I was thinking so hard about the perfect gift that my brain got a little tangled! Could you tell me a little more about them?"}
+             result = {"type": "conversation", "message": raw if raw else "I was thinking so hard about the perfect gift that my brain got a little tangled! Could you tell me a little more about them?"}
 
         # Don't save paywall prompts to history to keep it clean if they restart
         if not is_regeneration:
