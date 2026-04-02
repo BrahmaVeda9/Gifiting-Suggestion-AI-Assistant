@@ -36,7 +36,7 @@ st.markdown(f"""
 <style>
     /* Global Styles */
     .stApp {{
-        background-image: linear-gradient(rgba(252,248,250,0.87), rgba(252,248,250,0.87)), url("data:image/png;base64,{bg_b64}");
+        background-image: linear-gradient(rgba(252,248,250,0.5), rgba(252,248,250,0.5)), url("https://images.unsplash.com/photo-1518199266791-5375a83190b7?q=80&w=1000&auto=format&fit=crop");
         background-size: cover;
         background-attachment: fixed;
     }}
