@@ -211,6 +211,14 @@ with st.sidebar:
         st.session_state["messages"] = []
         st.rerun()
 
+    # ── DIAGNOSTIC INDICATORS ───────────────────────────────────
+    with st.expander("🛠️ Background Diagnostic", expanded=False):
+        st.caption(f"Path: {bg_path}")
+        st.caption(f"Exists: {os.path.exists(bg_path)}")
+        st.caption(f"Base64 Length: {len(bg_b64)}")
+        st.caption(f"MIME: image/jpeg")
+
+
 # ── HEADER ───────────────────────────────────────────────────────────────────
 st.markdown("<h1 style='text-align:center;'>Gifting Assistant</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; font-style:italic; color:#6a4c5a;'>Creating hand-crafted gift concepts for the people you love.</p>", unsafe_allow_html=True)
