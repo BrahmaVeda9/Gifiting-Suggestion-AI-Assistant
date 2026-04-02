@@ -37,12 +37,15 @@ st.markdown(f"""
 <style>
     /* Global Styles */
     [data-testid="stAppViewContainer"] {{
-        background: linear-gradient(rgba(252,248,250,0.8), rgba(252,248,250,0.8)), url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
+        background: linear-gradient(rgba(252, 248, 250, 0.82), rgba(252, 248, 250, 0.82)), 
+                    url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
         background-size: cover !important;
     }}
-    
-    [data-testid="stHeader"], .stApp, [data-testid="stVerticalBlock"] {{
+
+    /* Make all internal containers transparent to show the background */
+    [data-testid="stHeader"], .stApp, [data-testid="stSidebar"], [data-testid="stVerticalBlock"] {{
         background: transparent !important;
+        background-color: transparent !important;
     }}
     
     html, body, [class*="css"] {{
