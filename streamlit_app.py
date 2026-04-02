@@ -27,8 +27,7 @@ def _b64(path):
     except:
         return ""
 
-bg_path = os.path.join(os.path.dirname(__file__), "bg.png")
-bg_b64 = _b64(bg_path)
+bg_b64 = _b64("./bg.png")
 
 # ── CLEAN CSS (Minimal with no leakage) ──────────────────────────────────────
 # Note: Using st.markdown + unsafe_allow_html at the top once.
@@ -36,23 +35,10 @@ st.markdown(f"""
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,600&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
     /* Global Styles */
-    [data-testid="stAppViewContainer"] {{
-        background: url("data:image/png;base64,{bg_b64}") no-repeat center center fixed !important;
-        background-size: cover !important;
-    }}
-
-    [data-testid="stHeader"], .stApp, [data-testid="stVerticalBlock"], [data-testid="stApp"] {{
-        background-color: transparent !important;
-        background: transparent !important;
-    }}
-    
-    /* Overlay for readability */
-    [data-testid="stAppViewContainer"]::before {{
-        content: "";
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(255, 255, 255, 0.1); 
-        z-index: -1;
+    .stApp {{
+        background-image: linear-gradient(rgba(252,248,250,0.87), rgba(252,248,250,0.87)), url("data:image/png;base64,{bg_b64}");
+        background-size: cover;
+        background-attachment: fixed;
     }}
     
     html, body, [class*="css"] {{
