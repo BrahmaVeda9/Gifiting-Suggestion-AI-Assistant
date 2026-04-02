@@ -269,7 +269,8 @@ def render_message(role, type, content, msg_id=None, ideas=None, is_last=False):
                 st.divider()
                 if st.button("Regenerate Different Strategies ✨", key=f"regen_{msg_id}", use_container_width=True):
                     with st.spinner("Finding fresh frameworks..."):
-                        res = chat_handler.chat(st.session_state["session_id"], "", is_regeneration=True)
+                        # Pass history to ensure context is preserved on restart
+                        res = chat_handler.chat(st.session_state["session_id"], "", is_regeneration=True, history=st.session_state["messages"])
     
                     if res["type"] == "gift_ideas":
                         st.session_state["messages"].append({
@@ -301,7 +302,8 @@ if prompt := st.chat_input("I'm thinking of a gift for..."):
 msgs = st.session_state["messages"]
 if msgs and msgs[-1]["role"] == "user":
     with st.spinner("Dearly is curateing options..."):
-        response = chat_handler.chat(st.session_state["session_id"], msgs[-1]["content"])
+        # Pass history to ensure context is preserved on restart
+        response = chat_handler.chat(st.session_state["session_id"], msgs[-1]["content"], history=msgs[:-1])
     
     if response["type"] == "conversation":
         msgs.append({"role": "assistant", "type": "text", "content": response["message"]})

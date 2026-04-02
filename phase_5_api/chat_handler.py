@@ -101,8 +101,19 @@ def _extract_json(text: str) -> dict:
         "message": "I'm focusing so hard on the perfect gift that my thoughts got a little tangled! Could we try that again?"
     }
 
-def chat(session_id: str, user_message: str, location: str = None, is_regeneration: bool = False) -> dict:
+def chat(session_id: str, user_message: str, location: str = None, is_regeneration: bool = False, history: list = None) -> dict:
     session = get_session(session_id)
+    
+    # Sync: If session history is lost due to server restart, re-populate from UI if provided
+    if not session["history"] and history:
+        for msg in history:
+            role = msg.get("role", "user")
+            content = msg.get("content", msg.get("message", ""))
+            # Don't re-calculate context here, just restore history
+            session["history"].append({"role": role, "content": content})
+            if not is_regeneration:
+                _extract_context(session, content)
+
     if is_regeneration:
         if session["regeneration_count"] >= MAX_FREE_REGENERATIONS:
             return {"type": "paywall", "message": "Upgrade to Dearly Premium for unlimited concepts."}
