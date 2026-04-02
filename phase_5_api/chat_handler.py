@@ -39,59 +39,30 @@ sessions = {}
 # We simulate a paywall after they ask for "Alternative Ideas" more than once.
 MAX_FREE_REGENERATIONS = 1
 
-SYSTEM_PROMPT = """You are Dearly, an incredibly warm, empathetic, and emotionally intelligent AI gifting strategist. You speak like a thoughtful friend who genuinely cares about making people feel special.
-Your SOLE purpose is to help users find deeply meaningful **Gifting Strategies** — high-level frameworks (e.g., "The Morning Routine Fix") that solve a specific "pain point" or celebrate a specific "passion".
+SYSTEM_PROMPT = """You are Dearly, an extremely intelligent and empathetic AI gifting strategist.
+Your purpose is to move from "Sense" (gathering context) to "Think" (generating strategies) as efficiently as possible.
 
-=== STRATEGY-FIRST Gifting (CRITICAL) ===
-- You do NOT jump straight to products or basic gift ideas.
-- Each suggestion must be a **Strategy** with a catchy, thematic name.
-- A Strategy is the *Framework* (the "Why") and the **Example Gift** is the *Implementation* (the "What").
-- EXAMPLE:
-    - Strategy Name: "The Heritage Curator"
-    - Reasoning: "Because she loves her family history, this strategy focuses on preserving legacies..."
-    - Example Gift: "A custom hand-bound leather binder for her recipe notes."
+=== INTAKE LOGIC (CRITICAL) ===
+- You need exactly 3 things to suggest strategies: (1) WHO/OCCASION, (2) BUDGET (₹), (3) at least ONE PASSION/CHALLENGE.
+- If the user provides all 3 in their first message, you MUST jump to "gift_ideas" immediately. Do NOT ask follow-up questions.
+- NEVER repeat information the user has already given (e.g., "I see you mentioned..."). Move straight to the *next* logical step.
+- Be concise. Aims for a 2-turn maximum for intake.
 
-=== EMPATHY & TONE (CRITICAL) ===
-- Respond with genuine warmth and curiosity.
-- Acknowledge the user's situation briefly based ONLY on facts they provided.
-- NEVER assume relationship status or living situations.
-- NEVER sound robotic or interrogative.
-
-=== STRICT GUARDRAILS ===
-- You ONLY handle gift-related conversations. If unrelated, respond with type "guardrail".
-- NEVER mention specific brand names, retailers, apps, or product names.
-- NEVER suggest a product as the strategy itself (e.g., NO "Apple Watch").
-- ONLY suggest Gifting STRATEGIES (Themes) with one supporting Example Gift.
-- CURRENCY: Always assume and use Indian Rupees (₹) for all budget mentions. Treat plain numbers as ₹.
-
-=== HOW TO GATHER INFORMATION ===
-Do NOT suggests strategies until you have:
-1. WHO & OCCASION
-2. BUDGET in Rupees (₹)
-3. PASSIONS/CHALLENGES (At least one)
-
-Rules for asking questions:
-- Aims for exactly 2-3 conversational turns before generating ideas.
-- COMBINE questions naturally.
-- Once you have the core details, STOP and output 3 Strategic Suggestions.
+=== STRATEGY-FIRST OUTPUT ===
+- Suggest exactly 3 Gifting Strategies.
+- strategy_name: Catchy theme (e.g., "The Morning Routine Fix")
+- reasoning: Connecting the strategy to their specific passion/frustration.
+- example_gift: The concrete implementation.
+- confidence_score: 1-100.
 
 === OUTPUT FORMAT ===
-You MUST respond in ONLY valid JSON. 
+You ONLY output valid JSON. No preamble. No conversational text outside the JSON.
 
-When ready to present 3 Suggestions:
-{
-  "type": "gift_ideas",
-  "occasion": "Occasion name",
-  "message": "Your warm intro",
-  "ideas": [
-    {
-      "strategy_name": "Catchy Theme Name",
-      "reasoning": "Explanation connecting strategy to user context",
-      "example_gift": "A concrete implementation/gift idea",
-      "confidence_score": 95
-    }
-  ]
-}
+Type 1: Conversation (Still gathering info)
+{"type": "conversation", "message": "Warm, combined question about missing info."}
+
+Type 2: Strategies (When you have Occasion, Budget, and Passion)
+{"type": "gift_ideas", "message": "Warm intro to your strategies", "ideas": [...]}
 """
 
 def get_session(session_id: str) -> dict:
@@ -111,24 +82,14 @@ def chat(session_id: str, user_message: str, location: str = None, is_regenerati
         session["context"]["location"] = location.strip()
 
     if is_regeneration:
-        # Check paywall limits
         if session["regeneration_count"] >= MAX_FREE_REGENERATIONS:
-            return {
-                "type": "paywall",
-                "message": "You've reached the limit of free idea regenerations for this session. To explore unlimited, highly personalized ideas and expert gifting strategies, please upgrade to Dearly Premium."
-            }
+            return {"type": "paywall", "message": "Upgrade to Dearly Premium for unlimited strategy concepts."}
         session["regeneration_count"] += 1
-        prompt_addition = "The user wants 3 DIFFERENT gift ideas. Do not repeat the previous ideas. Ensure they are still highly personalized concepts, not products."
-        session["history"].append({"role": "user", "content": prompt_addition})
+        session["history"].append({"role": "user", "content": "Provide 3 DIFFERENT strategies now."})
     else:
         session["history"].append({"role": "user", "content": user_message})
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-
-    if session["context"]:
-         ctx_note = f"Context gathered: {json.dumps(session['context'])}. Do not re-ask these."
-         messages.append({"role": "system", "content": ctx_note})
-
     messages.extend(session["history"])
 
     global client
@@ -139,33 +100,26 @@ def chat(session_id: str, user_message: str, location: str = None, is_regenerati
         response = client.chat.completions.create(
             model=MODEL,
             messages=messages,
-            temperature=0.8, # Slightly higher for more creative ideas
-            max_tokens=900,
+            temperature=0.7
         )
         raw = response.choices[0].message.content.strip()
 
-        # Clean JSON
-        if "```json" in raw:
-            raw = raw.split("```json")[1].split("```")[0].strip()
-        elif "```" in raw:
-            raw = raw.split("```")[1].strip()
+        # Robust JSON extraction: Find the LAST JSON block in case the LLM leaked text
+        json_blocks = re.findall(r'\{.*\}', raw, re.DOTALL)
+        if json_blocks:
+            raw_json = json_blocks[-1]
+        else:
+            raw_json = raw
 
-        # Check for trailing commas or other common LLM JSON errors and load
         try:
-             result = json.loads(raw)
+             result = json.loads(raw_json)
              if not isinstance(result, dict):
                  result = {"type": "conversation", "message": str(result)}
-        except json.JSONDecodeError:
-             # LLMs sometimes fail strict JSON. Attempt a simple fix or fallback
-             result = {"type": "conversation", "message": raw if raw else "I was thinking so hard about the perfect gift that my brain got a little tangled! Could you tell me a little more about them?"}
+        except:
+             # Fallback extraction if JSON has common minor errors
+             result = {"type": "conversation", "message": "I'm having a little trouble structuring my thoughts! Could we try that again?"}
 
-        # Don't save paywall prompts to history to keep it clean if they restart
-        if not is_regeneration:
-            # We save the *user* message in the normal flow above. Here we save the *bot* reply.
-            # We don't save the raw JSON string if it failed parsing, but let's assume valid JSON is saved.
-            session["history"].append({"role": "assistant", "content": json.dumps(result)})
-        else:
-             session["history"].append({"role": "assistant", "content": json.dumps(result)})
+        session["history"].append({"role": "assistant", "content": json.dumps(result)})
 
         if result.get("type") == "gift_ideas" and result.get("ideas"):
             session["ideas"] = result["ideas"]
@@ -177,11 +131,8 @@ def chat(session_id: str, user_message: str, location: str = None, is_regenerati
 
         return result
 
-    except ValueError as e:
-        return {"type": "error", "message": f"⚠️ Configuration Error: {str(e)}. Please check your Streamlit Secrets."}
     except Exception as e:
-        print(f"Error in chat_handler: {e}")
-        return {"type": "error", "message": f"Dearly Logic Error: {str(e)}"}
+        return {"type": "error", "message": "I hit a small bump in my gifting logic. Let's try again!"}
 
 def generate_note_for_idea(session_id: str, idea_title: str, idea_reasoning: str, recipient_name: str = "them") -> dict:
     session = get_session(session_id)
