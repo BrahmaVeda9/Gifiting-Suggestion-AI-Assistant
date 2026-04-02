@@ -1,8 +1,22 @@
-# User Prompt History (Dearly AI)
+## Session: April 1st, 2026 (Backend Architecture)
 
-This file contains the collection of prompts provided by the user during the development session for the Dearly AI Gifting Assistant.
+On April 1st, the focus was on building the foundational backend and the "Sense-Think-Verify" logic. Based on the development records, the core objectives and initial prompts were:
 
-## Session: April 2nd, 2026
+1. **Initial Project Request**:
+   > "I want to build the backend for Dearly, an AI-powered gifting assistant. It needs to follow a 'Sense-Think-Verify' loop."
+
+2. **Phase-wise Development**:
+   > "Set up the project in isolated folders (Phase 1 to 6) so each part can be tested independently. Use FastAPI and Python."
+
+3. **Database & AI Core Requirements**:
+   > "Integrate Supabase with pgvector for RAG. Use the Google Gemini API for extraction and reasoning. The 'Sense' layer must extract budget, recipient passions, and the 'Wow vs. Utility' factor."
+
+4. **API Endpoint Definition**:
+   > "Implement endpoints for `/chat/intake` (to gather context), `/strategies` (to retrieve concepts via RAG), and `/generate-note` (to create the hearts-and-minds gifting note)."
+
+---
+
+## Session: April 2nd, 2026 (UI & Design)
 
 1. **Architecture & Wireframes**:
    > "okay, as you now know the how dearly looks and works can you generate me the wireframe and system design diagram."
