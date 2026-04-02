@@ -217,7 +217,7 @@ st.markdown("<p style='text-align:center; font-style:italic; color:#6a4c5a;'>Cre
 st.divider()
 
 # ── CHAT ENGINE ────────────────────────────────────────────────────────────────
-def render_message(role, type, content, msg_id=None, ideas=None):
+def render_message(role, type, content, msg_id=None, ideas=None, is_last=False):
     if role == "user":
         # Zig-Zag: User on Right with Capsule
         st.markdown(f"""
@@ -264,30 +264,32 @@ def render_message(role, type, content, msg_id=None, ideas=None):
                         )
                         _note_dialog(strategy_name, res["note"])
             
-            # REGENERATE
-            st.divider()
-            if st.button("Regenerate Different Strategies ✨", key=f"regen_{msg_id}", use_container_width=True):
-                with st.spinner("Finding fresh frameworks..."):
-                    res = chat_handler.chat(st.session_state["session_id"], "", is_regeneration=True)
-
-                if res["type"] == "gift_ideas":
-                    st.session_state["messages"].append({
-                        "role": "assistant", "type": "gift_ideas",
-                        "message": res["message"], "ideas": res["ideas"],
-                        "id": str(uuid.uuid4())[:8],
-                    })
-                    st.rerun()
-                elif res["type"] == "paywall":
-                    st.warning(res["message"])
+            # REGENERATE (Only on the very last strategy message)
+            if is_last:
+                st.divider()
+                if st.button("Regenerate Different Strategies ✨", key=f"regen_{msg_id}", use_container_width=True):
+                    with st.spinner("Finding fresh frameworks..."):
+                        res = chat_handler.chat(st.session_state["session_id"], "", is_regeneration=True)
+    
+                    if res["type"] == "gift_ideas":
+                        st.session_state["messages"].append({
+                            "role": "assistant", "type": "gift_ideas",
+                            "message": res["message"], "ideas": res["ideas"],
+                            "id": str(uuid.uuid4())[:10],
+                        })
+                        st.rerun()
+                    elif res["type"] == "paywall":
+                        st.warning(res["message"])
 
 # ── MAIN LOOP ──────────────────────────────────────────────────────────────────
-for msg in st.session_state["messages"]:
+for i, msg in enumerate(st.session_state["messages"]):
     render_message(
         msg["role"], 
         msg.get("type", "text"), 
         msg.get("content", msg.get("message", "")), 
         msg.get("id"), 
-        msg.get("ideas")
+        msg.get("ideas"),
+        is_last=(i == len(st.session_state["messages"]) - 1)
     )
 
 # ── CHAT INPUT ────────────────────────────────────────────────────────────────
