@@ -27,7 +27,8 @@ def _b64(path):
     except:
         return ""
 
-bg_b64 = _b64("./bg.png")
+bg_path = os.path.join(os.path.dirname(__file__), "bg.png")
+bg_b64 = _b64(bg_path)
 
 # ── CLEAN CSS (Minimal with no leakage) ──────────────────────────────────────
 # Note: Using st.markdown + unsafe_allow_html at the top once.
@@ -36,7 +37,7 @@ st.markdown(f"""
 <style>
     /* Global Styles */
     .stApp {{
-        background-image: linear-gradient(rgba(252,248,250,0.87), rgba(252,248,250,0.87)), url("data:image/png;base64,{bg_b64}");
+        background-image: linear-gradient(rgba(252,248,250,0.15), rgba(252,248,250,0.15)), url("data:image/png;base64,{bg_b64}");
         background-size: cover;
         background-attachment: fixed;
     }}
