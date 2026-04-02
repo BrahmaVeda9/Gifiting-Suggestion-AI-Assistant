@@ -101,12 +101,12 @@ def _extract_json(text: str) -> dict:
         "message": "I'm focusing so hard on the perfect gift that my thoughts got a little tangled! Could we try that again?"
     }
 
-def chat(session_id: str, user_message: str, location: str = None, is_regeneration: bool = False, history: list = None) -> dict:
+def dearly_chat(session_id: str, user_message: str, location: str = None, is_regeneration: bool = False, chat_history: list = None, **kwargs) -> dict:
     session = get_session(session_id)
     
     # Sync: If session history is lost due to server restart, re-populate from UI if provided
-    if not session["history"] and history:
-        for msg in history:
+    if not session["history"] and chat_history:
+        for msg in chat_history:
             role = msg.get("role", "user")
             content = msg.get("content", msg.get("message", ""))
             # Don't re-calculate context here, just restore history

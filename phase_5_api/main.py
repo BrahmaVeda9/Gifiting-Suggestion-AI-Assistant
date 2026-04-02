@@ -48,7 +48,7 @@ class ClearSessionRequest(BaseModel):
 
 @app.post("/api/chat")
 def chat(req: ChatRequest):
-    return chat_handler.chat(req.session_id, req.message, req.location, req.is_regeneration)
+    return chat_handler.dearly_chat(req.session_id, req.message, req.location, req.is_regeneration)
 
 @app.post("/api/note")
 def generate_note(req: NoteRequest):
