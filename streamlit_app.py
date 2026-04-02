@@ -212,7 +212,7 @@ with st.sidebar:
         st.rerun()
 
 # ── HEADER ───────────────────────────────────────────────────────────────────
-st.markdown("<h1 style='text-align:center;'>Gifting Assistant</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center;'>Dearly</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; font-style:italic; color:#6a4c5a;'>Creating hand-crafted gift concepts for the people you love.</p>", unsafe_allow_html=True)
 st.divider()
 
