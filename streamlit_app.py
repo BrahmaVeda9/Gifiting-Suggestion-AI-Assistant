@@ -264,8 +264,8 @@ def render_message(role, type, content, msg_id=None, ideas=None, is_last=False):
                         )
                         _note_dialog(strategy_name, res["note"])
             
-            # REGENERATE (Only on the very last strategy message)
-            if is_last:
+            # REGENERATE (Only if it's the last message AND we actually have ideas to regenerate)
+            if is_last and ideas:
                 st.divider()
                 if st.button("Regenerate Different Strategies ✨", key=f"regen_{msg_id}", use_container_width=True):
                     with st.spinner("Finding fresh frameworks..."):
